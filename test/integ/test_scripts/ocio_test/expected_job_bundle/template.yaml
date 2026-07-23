@@ -1,5 +1,5 @@
-specificationVersion: 'jobtemplate-2023-09'
-name: Default Maya Job Template
+specificationVersion: jobtemplate-2023-09
+name: test.ma
 parameterDefinitions:
 - name: MayaSceneFile
   type: PATH
@@ -29,7 +29,6 @@ parameterDefinitions:
 - name: ProjectPath
   type: PATH
   objectType: DIRECTORY
-  # The submitter determines the set of files by walking the scene graph.
   dataFlow: NONE
   userInterface:
     control: CHOOSE_DIRECTORY
@@ -75,13 +74,51 @@ parameterDefinitions:
     control: HIDDEN
   description: The OCIO configuration file path (auto-detected from scene).
   default: ''
+- name: OutputFilePrefix
+  type: STRING
+  userInterface:
+    control: LINE_EDIT
+    label: Output File Prefix
+    groupLabel: Maya Settings
+  description: The output filename prefix.
+- name: ImageWidth
+  type: INT
+  userInterface:
+    control: SPIN_BOX
+    label: Image Width
+    groupLabel: Maya Settings
+  minValue: 1
+  description: The image width of the output.
+- name: ImageHeight
+  type: INT
+  userInterface:
+    control: SPIN_BOX
+    label: Image Height
+    groupLabel: Maya Settings
+  minValue: 1
+  description: The image height of the output.
+- name: ArnoldErrorOnLicenseFailure
+  type: STRING
+  userInterface:
+    control: CHECK_BOX
+    label: Error on License Failure
+    groupLabel: Arnold Renderer Settings
+  description: Whether to produce an error when there is an Arnold license failure.
+  default: 'false'
+  allowedValues:
+  - 'true'
+  - 'false'
 steps:
-- name: Render
+- name: masterLayer
   parameterSpace:
     taskParameterDefinitions:
     - name: Frame
       type: INT
       range: '{{Param.Frames}}'
+    - name: Camera
+      type: STRING
+      range:
+      - persp
   stepEnvironments:
   - name: Maya
     description: Runs Maya in the background.
@@ -91,12 +128,19 @@ steps:
         filename: init-data.yaml
         type: TEXT
         data: |
+          renderer: arnold
+          render_layer: masterLayer
           scene_file: '{{Param.MayaSceneFile}}'
           project_path: '{{Param.ProjectPath}}'
           output_file_path: '{{Param.OutputFilePath}}'
           render_setup_include_lights: {{Param.RenderSetupIncludeLights}}
           strict_error_checking: {{Param.StrictErrorChecking}}
           ocio_config_file: '{{Param.OCIOConfigFile}}'
+          output_file_prefix: '{{Param.OutputFilePrefix}}'
+          image_width: {{Param.ImageWidth}}
+          image_height: {{Param.ImageHeight}}
+          cache_pathmapping: true
+          error_on_arnold_license_fail: {{Param.ArnoldErrorOnLicenseFailure}}
       actions:
         onEnter:
           command: MayaAdaptor
@@ -111,6 +155,7 @@ steps:
           - file://{{Env.File.initData}}
           cancelation:
             mode: NOTIFY_THEN_TERMINATE
+          timeout: 87000
         onExit:
           command: MayaAdaptor
           args:
@@ -120,6 +165,7 @@ steps:
           - '{{ Session.WorkingDirectory }}/connection.json'
           cancelation:
             mode: NOTIFY_THEN_TERMINATE
+          timeout: 600
   script:
     embeddedFiles:
     - name: runData
@@ -127,6 +173,7 @@ steps:
       type: TEXT
       data: |
         frame: {{Task.Param.Frame}}
+        camera: '{{Task.Param.Camera}}'
     actions:
       onRun:
         command: MayaAdaptor

@@ -1,3 +1,20 @@
+## 0.15.17 (2026-07-21)
+
+### Features
+* The Maya render submitter now runs pre-GUI hooks before opening the submit dialog, allowing studios to pre-populate dialog fields via hooks defined in DEADLINE_HOOKS_DIR. (#437)
+
+### Bug Fixes
+* Sticky settings are now properly reloaded each time the submit dialog is reopened, ensuring user-set job parameters are restored while scene-derived fields remain up to date. (#434)
+## 0.15.16 (2026-06-25)
+
+### Features
+* Added timeout setting to Maya job submission, allowing you to configure how long a task can run before being terminated. (#422)
+* Enabled the deadline-cloud-v2 conda channel in the submitter for improved package resolution. (#430)
+* Extracted submitter logic into externally callable functions with a new SubmissionContext pattern. External integrations (e.g. AYON) can now use `create_submission_context()`, `get_job_template_for_submission()`, and related public APIs to programmatically drive submissions without the UI. (#405)
+
+### Bug Fixes
+* Fixed OCIO config file path separators on Windows. Previously, the OCIOConfigFile job bundle parameter could be emitted with backslashes on Windows, causing inconsistent bundles. Paths are now normalized to forward slashes. (#413)
+* Fixed the cameras dropdown not being populated when the submitter dialog first opens. (#402)
 ## 0.15.15 (2026-05-06)
 
 ### Features
